@@ -102,7 +102,7 @@ const AdminDashboard = () => {
               <DollarSign className="h-4 w-4 text-green-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-green-600">${totalRevenue.toFixed(2)}</div>
+              <div className="text-2xl font-bold text-green-600">{totalRevenue} ETB</div>
               <p className="text-xs text-muted-foreground">
                 {purchases.length} total purchase{purchases.length !== 1 ? 's' : ''}
               </p>
@@ -140,7 +140,7 @@ const AdminDashboard = () => {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-orange-600">
-                ${purchases.length > 0 ? (totalRevenue / purchases.length).toFixed(2) : '0.00'}
+                {purchases.length > 0 ? Math.round(totalRevenue / purchases.length) : 0} ETB
               </div>
               <p className="text-xs text-muted-foreground">Per purchase</p>
             </CardContent>
@@ -176,10 +176,22 @@ const AdminDashboard = () => {
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="font-medium">${Number(purchase.total_amount).toFixed(2)}</p>
-                      <p className="text-sm text-gray-500">
+                      <p className="font-medium">{Number(purchase.total_amount)} ETB</p>
+                      <div className="text-sm text-gray-500">
                         {new Date(purchase.purchase_date).toLocaleDateString()}
-                      </p>
+                        <span className={`ml-2 px-2 py-1 rounded text-xs ${
+                          purchase.payment_status === 'completed' ? 'bg-green-100 text-green-700' : 
+                          purchase.payment_status === 'pending' ? 'bg-yellow-100 text-yellow-700' : 
+                          'bg-red-100 text-red-700'
+                        }`}>
+                          {purchase.payment_status || 'completed'}
+                        </span>
+                        {purchase.payment_method && (
+                          <div className="text-xs text-gray-400">
+                            via {purchase.payment_method}
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
                 ))
@@ -214,16 +226,29 @@ const AdminDashboard = () => {
                     </div>
                     <div className="flex items-center gap-4">
                       <div className="text-right">
-                        <p className="font-medium">${Number(purchase.total_amount).toFixed(2)}</p>
+                        <p className="font-medium">{Number(purchase.total_amount)} ETB</p>
                         <p className="text-sm text-gray-500">Qty: {purchase.quantity}</p>
-                        <Badge variant="outline" className="text-green-600 border-green-200">
-                          {purchase.status}
+                        <div className="text-xs text-gray-500 space-y-1">
+                          {purchase.transaction_reference && (
+                            <div>Ref: {purchase.transaction_reference}</div>
+                          )}
+                          {purchase.chapa_transaction_id && (
+                            <div>Chapa ID: {purchase.chapa_transaction_id}</div>
+                          )}
+                        </div>
+                        <Badge variant="outline" className={`${
+                          purchase.payment_status === 'completed' ? 'text-green-600 border-green-200' : 
+                          purchase.payment_status === 'pending' ? 'text-yellow-600 border-yellow-200' : 
+                          'text-red-600 border-red-200'
+                        }`}>
+                          {purchase.payment_status || 'completed'}
                         </Badge>
                       </div>
                       <Button 
                         size="sm" 
                         onClick={() => downloadTicket(purchase.ticket_id, purchase.customer_name)}
-                        className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600"
+                        disabled={purchase.payment_status !== 'completed'}
+                        className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 disabled:opacity-50"
                       >
                         <Download className="w-4 h-4 mr-2" />
                         Download
@@ -284,7 +309,7 @@ const AdminDashboard = () => {
                   />
                 </div>
                 <div>
-                  <Label htmlFor="price">Ticket Price ($)</Label>
+                  <Label htmlFor="price">Ticket Price (ETB)</Label>
                   <Input 
                     id="price"
                     type="number"

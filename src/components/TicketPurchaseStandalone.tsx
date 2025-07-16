@@ -15,6 +15,8 @@ import {
   Ticket,
   CreditCard
 } from "lucide-react";
+import ChapaCheckoutForm from "./ChapaCheckoutForm";
+import { supabase } from "@/integrations/supabase/client";
 
 interface TicketPurchaseStandaloneProps {
   customerInfo: {
@@ -39,7 +41,10 @@ const TicketPurchaseStandalone = ({
   processing,
   currentTicket 
 }: TicketPurchaseStandaloneProps) => {
-  const handlePurchase = () => {
+  const [showPayment, setShowPayment] = useState(false);
+  const [transactionRef, setTransactionRef] = useState("");
+  
+  const handleProceedToPayment = async () => {
     if (!customerInfo.name || !customerInfo.email) {
       toast({
         title: "Missing Information",
@@ -49,7 +54,44 @@ const TicketPurchaseStandalone = ({
       return;
     }
 
-    onPurchase();
+    // Generate unique transaction reference
+    const txRef = `RF${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    setTransactionRef(txRef);
+
+    // Create pending purchase record
+    try {
+      const totalAmount = Number(currentTicket.price) * quantity;
+      const { data, error } = await supabase
+        .from("purchases")
+        .insert({
+          ticket_id: `RF${String(Math.floor(Math.random() * 1000)).padStart(3, '0')}`,
+          customer_name: customerInfo.name,
+          customer_email: customerInfo.email,
+          customer_phone: customerInfo.phone || null,
+          quantity,
+          total_amount: totalAmount,
+          payment_method: "chapa",
+          transaction_reference: txRef,
+          payment_status: "pending"
+        })
+        .select()
+        .single();
+
+      if (error) {
+        console.error("Error creating purchase:", error);
+        toast({
+          title: "Error",
+          description: "Failed to create purchase record.",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      console.log("Created pending purchase:", data);
+      setShowPayment(true);
+    } catch (error) {
+      console.error("Error:", error);
+    }
   };
 
   return (
@@ -153,7 +195,7 @@ const TicketPurchaseStandalone = ({
                       <p className="text-sm text-orange-600">Access to all carnival activities</p>
                     </div>
                     <div className="text-right">
-                      <p className="text-2xl font-bold text-orange-700">${currentTicket.price}</p>
+                      <p className="text-2xl font-bold text-orange-700">{currentTicket.price} ETB</p>
                       <p className="text-sm text-orange-600">per ticket</p>
                     </div>
                   </div>
@@ -214,22 +256,31 @@ const TicketPurchaseStandalone = ({
                 <div className="bg-gray-50 p-4 rounded-lg space-y-2">
                   <div className="flex justify-between">
                     <span>Tickets ({quantity}x)</span>
-                    <span>${(Number(currentTicket.price) * quantity).toFixed(2)}</span>
+                    <span>{(Number(currentTicket.price) * quantity)} ETB</span>
                   </div>
                   <div className="flex justify-between font-bold text-lg">
                     <span>Total</span>
-                    <span>${(Number(currentTicket.price) * quantity).toFixed(2)}</span>
+                    <span>{(Number(currentTicket.price) * quantity)} ETB</span>
                   </div>
                 </div>
 
-                <Button 
-                  onClick={handlePurchase}
-                  disabled={processing}
-                  className="w-full bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white text-lg py-3"
-                >
-                  <CreditCard className="w-5 h-5 mr-2" />
-                  {processing ? "Processing..." : `Purchase Tickets - $${(Number(currentTicket.price) * quantity).toFixed(2)}`}
-                </Button>
+                {!showPayment ? (
+                  <Button 
+                    onClick={handleProceedToPayment}
+                    disabled={processing || !customerInfo.name || !customerInfo.email}
+                    className="w-full bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white text-lg py-3"
+                  >
+                    <CreditCard className="w-5 h-5 mr-2" />
+                    {processing ? "Processing..." : `Proceed to Payment - ${(Number(currentTicket.price) * quantity)} ETB`}
+                  </Button>
+                ) : (
+                  <ChapaCheckoutForm
+                    customerInfo={customerInfo}
+                    quantity={quantity}
+                    currentTicket={currentTicket}
+                    transactionRef={transactionRef}
+                  />
+                )}
 
                 <p className="text-xs text-gray-500 text-center">
                   By purchasing, you agree to our terms and conditions. 

@@ -16,37 +16,49 @@ export type Database = {
     Tables: {
       purchases: {
         Row: {
+          chapa_transaction_id: string | null
           customer_email: string
           customer_name: string
           customer_phone: string | null
           id: string
+          payment_method: string | null
+          payment_status: string | null
           purchase_date: string
           quantity: number
           status: string
           ticket_id: string
           total_amount: number
+          transaction_reference: string | null
         }
         Insert: {
+          chapa_transaction_id?: string | null
           customer_email: string
           customer_name: string
           customer_phone?: string | null
           id?: string
+          payment_method?: string | null
+          payment_status?: string | null
           purchase_date?: string
           quantity?: number
           status?: string
           ticket_id: string
           total_amount: number
+          transaction_reference?: string | null
         }
         Update: {
+          chapa_transaction_id?: string | null
           customer_email?: string
           customer_name?: string
           customer_phone?: string | null
           id?: string
+          payment_method?: string | null
+          payment_status?: string | null
           purchase_date?: string
           quantity?: number
           status?: string
           ticket_id?: string
           total_amount?: number
+          transaction_reference?: string | null
         }
         Relationships: []
       }
