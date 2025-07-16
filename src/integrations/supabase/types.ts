@@ -14,7 +14,75 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      purchases: {
+        Row: {
+          customer_email: string
+          customer_name: string
+          customer_phone: string | null
+          id: string
+          purchase_date: string
+          quantity: number
+          status: string
+          ticket_id: string
+          total_amount: number
+        }
+        Insert: {
+          customer_email: string
+          customer_name: string
+          customer_phone?: string | null
+          id?: string
+          purchase_date?: string
+          quantity?: number
+          status?: string
+          ticket_id: string
+          total_amount: number
+        }
+        Update: {
+          customer_email?: string
+          customer_name?: string
+          customer_phone?: string | null
+          id?: string
+          purchase_date?: string
+          quantity?: number
+          status?: string
+          ticket_id?: string
+          total_amount?: number
+        }
+        Relationships: []
+      }
+      tickets: {
+        Row: {
+          created_at: string
+          date: string
+          event_name: string
+          id: string
+          price: number
+          time: string
+          updated_at: string
+          venue: string
+        }
+        Insert: {
+          created_at?: string
+          date?: string
+          event_name?: string
+          id?: string
+          price?: number
+          time?: string
+          updated_at?: string
+          venue?: string
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          event_name?: string
+          id?: string
+          price?: number
+          time?: string
+          updated_at?: string
+          venue?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

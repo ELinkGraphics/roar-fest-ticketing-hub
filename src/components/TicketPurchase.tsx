@@ -12,37 +12,31 @@ import {
   Calendar, 
   MapPin, 
   Clock, 
-  Star,
   Users,
   Ticket,
-  CreditCard,
-  Download
+  CreditCard
 } from "lucide-react";
-import TicketDesign from "./TicketDesign";
+import { useTicketData } from "@/hooks/useTicketData";
+import TicketPurchaseSuccess from "./TicketPurchaseSuccess";
 
 interface TicketPurchaseProps {
   onBackToAdmin: () => void;
 }
 
 const TicketPurchase = ({ onBackToAdmin }: TicketPurchaseProps) => {
+  const { tickets, createPurchase, loading } = useTicketData();
   const [customerInfo, setCustomerInfo] = useState({
     name: "",
     email: "",
     phone: ""
   });
   const [quantity, setQuantity] = useState(1);
-  const [showSuccess, setShowSuccess] = useState(false);
-  const [ticketId, setTicketId] = useState("");
+  const [purchaseData, setPurchaseData] = useState<any>(null);
+  const [processing, setProcessing] = useState(false);
 
-  const eventData = {
-    eventName: "Roar Fest 2024",
-    date: "2024-08-15",
-    time: "10:00 AM",
-    venue: "Central Park Carnival Grounds",
-    price: 25
-  };
+  const currentTicket = tickets[0]; // Use the first ticket from database
 
-  const handlePurchase = () => {
+  const handlePurchase = async () => {
     if (!customerInfo.name || !customerInfo.email) {
       toast({
         title: "Missing Information",
@@ -52,79 +46,90 @@ const TicketPurchase = ({ onBackToAdmin }: TicketPurchaseProps) => {
       return;
     }
 
-    // Generate ticket ID
-    const newTicketId = `RF${String(Math.floor(Math.random() * 1000)).padStart(3, '0')}`;
-    setTicketId(newTicketId);
-    setShowSuccess(true);
+    if (!currentTicket) {
+      toast({
+        title: "Error",
+        description: "No ticket information available.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setProcessing(true);
     
-    toast({
-      title: "Payment Successful!",
-      description: "Your tickets have been purchased successfully.",
-    });
+    try {
+      // Generate ticket ID
+      const ticketId = `RF${String(Math.floor(Math.random() * 1000)).padStart(3, '0')}`;
+      const totalAmount = Number(currentTicket.price) * quantity;
+
+      const purchase = await createPurchase({
+        ticket_id: ticketId,
+        customer_name: customerInfo.name,
+        customer_email: customerInfo.email,
+        customer_phone: customerInfo.phone || null,
+        quantity,
+        total_amount: totalAmount
+      });
+
+      setPurchaseData(purchase);
+      
+      toast({
+        title: "Payment Successful!",
+        description: "Your tickets have been purchased successfully.",
+      });
+    } catch (error) {
+      console.error('Purchase error:', error);
+      toast({
+        title: "Purchase Failed",
+        description: "There was an error processing your purchase. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setProcessing(false);
+    }
   };
 
   const downloadTicket = () => {
     toast({
       title: "Ticket Downloaded",
-      description: `Your ticket ${ticketId} has been downloaded.`,
+      description: `Your ticket ${purchaseData.ticket_id} has been downloaded.`,
     });
   };
 
-  if (showSuccess) {
+  if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-orange-50 via-yellow-50 to-red-50 p-6">
-        <div className="container mx-auto max-w-4xl space-y-6">
-          <Button 
-            variant="ghost" 
-            onClick={onBackToAdmin}
-            className="text-orange-600 hover:text-orange-700 hover:bg-orange-50"
-          >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Admin
-          </Button>
-
-          <Card className="border-green-200 bg-green-50">
-            <CardHeader className="text-center">
-              <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Ticket className="w-8 h-8 text-white" />
-              </div>
-              <CardTitle className="text-2xl text-green-700">Purchase Successful!</CardTitle>
-              <CardDescription className="text-green-600">
-                Your tickets for Roar Fest 2024 have been confirmed
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="text-center space-y-4">
-              <Badge className="bg-green-600 text-white text-lg px-4 py-2">
-                Ticket ID: {ticketId}
-              </Badge>
-              <p className="text-sm text-green-600">
-                A confirmation email has been sent to {customerInfo.email}
-              </p>
-              <Button 
-                onClick={downloadTicket}
-                className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600"
-              >
-                <Download className="w-4 h-4 mr-2" />
-                Download Ticket
-              </Button>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Your Ticket</CardTitle>
-              <CardDescription>Save this ticket for event entry</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <TicketDesign 
-                ticketId={ticketId}
-                customerName={customerInfo.name}
-                eventData={eventData}
-              />
-            </CardContent>
-          </Card>
+      <div className="min-h-screen bg-gradient-to-br from-orange-50 via-yellow-50 to-red-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-orange-500 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading ticket information...</p>
         </div>
       </div>
+    );
+  }
+
+  if (!currentTicket) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-orange-50 via-yellow-50 to-red-50 flex items-center justify-center">
+        <Card className="max-w-md">
+          <CardContent className="text-center p-6">
+            <p className="text-gray-600">No ticket information available.</p>
+            <Button onClick={onBackToAdmin} className="mt-4">
+              Back to Admin
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (purchaseData) {
+    return (
+      <TicketPurchaseSuccess
+        purchase={purchaseData}
+        ticket={currentTicket}
+        onBackToAdmin={onBackToAdmin}
+        onDownloadTicket={downloadTicket}
+      />
     );
   }
 
@@ -162,21 +167,25 @@ const TicketPurchase = ({ onBackToAdmin }: TicketPurchaseProps) => {
                 </div>
                 
                 <h1 className="text-3xl font-bold bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent mb-4">
-                  {eventData.eventName}
+                  {currentTicket.event_name}
                 </h1>
                 
                 <div className="space-y-3 text-gray-600">
                   <div className="flex items-center gap-3">
                     <Calendar className="w-5 h-5 text-orange-500" />
-                    <span>August 15, 2024</span>
+                    <span>{new Date(currentTicket.date).toLocaleDateString('en-US', { 
+                      year: 'numeric', 
+                      month: 'long', 
+                      day: 'numeric' 
+                    })}</span>
                   </div>
                   <div className="flex items-center gap-3">
                     <Clock className="w-5 h-5 text-orange-500" />
-                    <span>10:00 AM - 6:00 PM</span>
+                    <span>{currentTicket.time} - 6:00 PM</span>
                   </div>
                   <div className="flex items-center gap-3">
                     <MapPin className="w-5 h-5 text-orange-500" />
-                    <span>{eventData.venue}</span>
+                    <span>{currentTicket.venue}</span>
                   </div>
                   <div className="flex items-center gap-3">
                     <Users className="w-5 h-5 text-orange-500" />
@@ -220,7 +229,7 @@ const TicketPurchase = ({ onBackToAdmin }: TicketPurchaseProps) => {
                       <p className="text-sm text-orange-600">Access to all carnival activities</p>
                     </div>
                     <div className="text-right">
-                      <p className="text-2xl font-bold text-orange-700">${eventData.price}</p>
+                      <p className="text-2xl font-bold text-orange-700">${currentTicket.price}</p>
                       <p className="text-sm text-orange-600">per ticket</p>
                     </div>
                   </div>
@@ -281,20 +290,21 @@ const TicketPurchase = ({ onBackToAdmin }: TicketPurchaseProps) => {
                 <div className="bg-gray-50 p-4 rounded-lg space-y-2">
                   <div className="flex justify-between">
                     <span>Tickets ({quantity}x)</span>
-                    <span>${eventData.price * quantity}</span>
+                    <span>${(Number(currentTicket.price) * quantity).toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between font-bold text-lg">
                     <span>Total</span>
-                    <span>${eventData.price * quantity}</span>
+                    <span>${(Number(currentTicket.price) * quantity).toFixed(2)}</span>
                   </div>
                 </div>
 
                 <Button 
                   onClick={handlePurchase}
+                  disabled={processing}
                   className="w-full bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white text-lg py-3"
                 >
                   <CreditCard className="w-5 h-5 mr-2" />
-                  Purchase Tickets - ${eventData.price * quantity}
+                  {processing ? "Processing..." : `Purchase Tickets - $${(Number(currentTicket.price) * quantity).toFixed(2)}`}
                 </Button>
 
                 <p className="text-xs text-gray-500 text-center">

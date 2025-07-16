@@ -1,33 +1,26 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
+import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/hooks/use-toast";
-import { 
-  Users, 
-  DollarSign, 
-  Ticket, 
-  TrendingUp, 
-  Download, 
-  Share2, 
-  Eye,
-  Calendar,
-  MapPin,
-  Clock,
-  Star
-} from "lucide-react";
+import { Share2, Eye } from "lucide-react";
 import AdminDashboard from "@/components/AdminDashboard";
 import TicketPurchase from "@/components/TicketPurchase";
-import TicketDesign from "@/components/TicketDesign";
 
 const Index = () => {
   const [currentView, setCurrentView] = useState("admin");
   const [shareableLink, setShareableLink] = useState("");
+
+  // Check URL parameters on component mount
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const viewFromUrl = urlParams.get('view');
+    
+    if (viewFromUrl === 'purchase') {
+      setCurrentView('purchase');
+    }
+  }, []);
 
   const generateShareableLink = () => {
     const link = `${window.location.origin}/?view=purchase`;
@@ -38,14 +31,6 @@ const Index = () => {
       description: "Shareable ticket purchase link has been copied to clipboard.",
     });
   };
-
-  // Check if we're in purchase view from URL
-  const urlParams = new URLSearchParams(window.location.search);
-  const viewFromUrl = urlParams.get('view');
-  
-  if (viewFromUrl === 'purchase' && currentView === 'admin') {
-    setCurrentView('purchase');
-  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 via-yellow-50 to-red-50">
@@ -65,7 +50,7 @@ const Index = () => {
                 <h1 className="text-3xl font-bold bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent">
                   Roar Fest Admin
                 </h1>
-                <p className="text-gray-600">Event Management Dashboard</p>
+                <p className="text-gray-600">Real-time Event Management Dashboard</p>
               </div>
             </div>
             <div className="flex gap-3">
