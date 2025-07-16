@@ -23,12 +23,12 @@ const Index = () => {
   }, []);
 
   const generateShareableLink = () => {
-    const link = `${window.location.origin}/?view=purchase`;
+    const link = `${window.location.origin}/tickets`;
     setShareableLink(link);
     navigator.clipboard.writeText(link);
     toast({
       title: "Link Copied!",
-      description: "Shareable ticket purchase link has been copied to clipboard.",
+      description: "Unique ticket purchase link has been copied to clipboard.",
     });
   };
 
@@ -59,7 +59,7 @@ const Index = () => {
                 className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white"
               >
                 <Share2 className="w-4 h-4 mr-2" />
-                Generate Share Link
+                Generate Unique Link
               </Button>
               <Button 
                 variant="outline"
@@ -76,11 +76,14 @@ const Index = () => {
             <Card className="border-green-200 bg-green-50">
               <CardContent className="p-4">
                 <div className="flex items-center gap-2">
-                  <Label className="text-green-700 font-medium">Shareable Link:</Label>
+                  <Label className="text-green-700 font-medium">Unique Purchase Link:</Label>
                   <code className="bg-white px-3 py-1 rounded border text-sm flex-1">
                     {shareableLink}
                   </code>
                 </div>
+                <p className="text-xs text-green-600 mt-2">
+                  This link allows customers to purchase tickets without accessing the admin dashboard.
+                </p>
               </CardContent>
             </Card>
           )}
