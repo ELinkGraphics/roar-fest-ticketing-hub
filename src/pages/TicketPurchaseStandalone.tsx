@@ -1,11 +1,11 @@
 
 import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import TicketPurchase from "@/components/TicketPurchase";
+import TicketPurchaseStandalone from "@/components/TicketPurchaseStandalone";
 import TicketPurchaseSuccess from "@/components/TicketPurchaseSuccess";
 import { useTicketData } from "@/hooks/useTicketData";
 
-const TicketPurchaseStandalone = () => {
+const TicketPurchaseStandalonePage = () => {
   const { tickets, createPurchase, loading } = useTicketData();
   const [customerInfo, setCustomerInfo] = useState({
     name: "",
@@ -88,8 +88,7 @@ const TicketPurchaseStandalone = () => {
   }
 
   return (
-    <TicketPurchase 
-      onBackToAdmin={undefined}
+    <TicketPurchaseStandalone 
       customerInfo={customerInfo}
       setCustomerInfo={setCustomerInfo}
       quantity={quantity}
@@ -101,4 +100,4 @@ const TicketPurchaseStandalone = () => {
   );
 };
 
-export default TicketPurchaseStandalone;
+export default TicketPurchaseStandalonePage;
