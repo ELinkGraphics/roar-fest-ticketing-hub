@@ -13,8 +13,27 @@ const TicketPurchaseStandalonePage = () => {
     phone: ""
   });
   const [quantity, setQuantity] = useState(1);
+  const [guestNames, setGuestNames] = useState<string[]>([""]);
   const [purchaseData, setPurchaseData] = useState<any>(null);
   const [processing, setProcessing] = useState(false);
+
+  // Sync guest names array with quantity changes
+  const handleQuantityChange = (newQuantity: number) => {
+    setQuantity(newQuantity);
+    
+    // Adjust guest names array to match quantity
+    if (newQuantity > guestNames.length) {
+      // Add empty strings for new tickets
+      const newNames = [...guestNames];
+      while (newNames.length < newQuantity) {
+        newNames.push("");
+      }
+      setGuestNames(newNames);
+    } else if (newQuantity < guestNames.length) {
+      // Remove excess names
+      setGuestNames(guestNames.slice(0, newQuantity));
+    }
+  };
 
   const currentTicket = tickets[0];
 
@@ -92,7 +111,9 @@ const TicketPurchaseStandalonePage = () => {
       customerInfo={customerInfo}
       setCustomerInfo={setCustomerInfo}
       quantity={quantity}
-      setQuantity={setQuantity}
+      setQuantity={handleQuantityChange}
+      guestNames={guestNames}
+      setGuestNames={setGuestNames}
       onPurchase={handlePurchase}
       processing={processing}
       currentTicket={currentTicket}

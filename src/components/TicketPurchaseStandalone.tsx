@@ -16,6 +16,7 @@ import {
   CreditCard
 } from "lucide-react";
 import ChapaCheckoutForm from "./ChapaCheckoutForm";
+import { GuestNamesForm } from "./GuestNamesForm";
 import { supabase } from "@/integrations/supabase/client";
 
 interface TicketPurchaseStandaloneProps {
@@ -27,19 +28,23 @@ interface TicketPurchaseStandaloneProps {
   setCustomerInfo: (info: any) => void;
   quantity: number;
   setQuantity: (qty: number) => void;
+  guestNames: string[];
+  setGuestNames: (names: string[]) => void;
   onPurchase: () => void;
   processing: boolean;
   currentTicket: any;
 }
 
-const TicketPurchaseStandalone = ({ 
-  customerInfo, 
-  setCustomerInfo, 
-  quantity, 
-  setQuantity, 
+const TicketPurchaseStandalone = ({
+  customerInfo,
+  setCustomerInfo,
+  quantity,
+  setQuantity,
   onPurchase,
   processing,
-  currentTicket 
+  currentTicket,
+  guestNames,
+  setGuestNames
 }: TicketPurchaseStandaloneProps) => {
   const [showPayment, setShowPayment] = useState(false);
   const [transactionRef, setTransactionRef] = useState("");
@@ -48,49 +53,95 @@ const TicketPurchaseStandalone = ({
     if (!customerInfo.name || !customerInfo.email) {
       toast({
         title: "Missing Information",
-        description: "Please fill in all required fields.",
-        variant: "destructive"
+        description: "Please fill in your name and email address.",
+        variant: "destructive",
       });
       return;
     }
 
-    // Generate unique transaction reference
-    const txRef = `RF${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-    setTransactionRef(txRef);
+    // Validate guest names
+    const validGuestNames = guestNames.filter(name => name.trim().length > 0);
+    const uniqueNames = new Set(validGuestNames.map(name => name.trim().toLowerCase()));
+    
+    if (validGuestNames.length < quantity) {
+      toast({
+        title: "Missing Guest Names",
+        description: `Please provide names for all ${quantity} guests.`,
+        variant: "destructive",
+      });
+      return;
+    }
 
-    // Create pending purchase record
+    if (uniqueNames.size !== validGuestNames.length) {
+      toast({
+        title: "Duplicate Names",
+        description: "Each guest name must be unique within this order.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!currentTicket) {
+      toast({
+        title: "Error",
+        description: "No ticket information available.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
+      // Generate a unique transaction reference and QR code
+      const txRef = `RF${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      const qrCode = `QR-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
       const totalAmount = Number(currentTicket.price) * quantity;
-      const { data, error } = await supabase
-        .from("purchases")
-        .insert({
+
+      // Create a pending purchase record in Supabase
+      const { data: purchaseData, error: purchaseError } = await supabase
+        .from('purchases')
+        .insert([{
           ticket_id: `RF${String(Math.floor(Math.random() * 1000)).padStart(3, '0')}`,
           customer_name: customerInfo.name,
           customer_email: customerInfo.email,
           customer_phone: customerInfo.phone || null,
           quantity,
           total_amount: totalAmount,
-          payment_method: "chapa",
+          payment_method: 'chapa',
           transaction_reference: txRef,
-          payment_status: "pending"
-        })
+          payment_status: 'pending',
+          qr_code: qrCode
+        }])
         .select()
         .single();
 
-      if (error) {
-        console.error("Error creating purchase:", error);
-        toast({
-          title: "Error",
-          description: "Failed to create purchase record.",
-          variant: "destructive"
-        });
-        return;
+      if (purchaseError) {
+        throw purchaseError;
       }
 
-      console.log("Created pending purchase:", data);
+      // Insert guest names
+      const guestData = validGuestNames.map((name, index) => ({
+        purchase_id: purchaseData.id,
+        guest_name: name.trim(),
+        guest_order: index + 1
+      }));
+
+      const { error: guestError } = await supabase
+        .from('ticket_guests')
+        .insert(guestData);
+
+      if (guestError) {
+        throw guestError;
+      }
+
+      setTransactionRef(txRef);
       setShowPayment(true);
     } catch (error) {
-      console.error("Error:", error);
+      console.error('Purchase error:', error);
+      toast({
+        title: "Error",
+        description: "Failed to create purchase record. Please try again.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -201,18 +252,48 @@ const TicketPurchaseStandalone = ({
                   </div>
                 </div>
 
-                <div>
+                <div className="flex items-center justify-between">
                   <Label htmlFor="quantity">Number of Tickets</Label>
-                  <Input 
+                  <Badge variant="secondary" className="bg-orange-100 text-orange-800">
+                    No limit per order
+                  </Badge>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                    disabled={quantity <= 1}
+                  >
+                    -
+                  </Button>
+                  <Input
                     id="quantity"
                     type="number"
                     min="1"
-                    max="10"
+                    max="100"
                     value={quantity}
-                    onChange={(e) => setQuantity(parseInt(e.target.value) || 1)}
-                    className="border-orange-200 focus:border-orange-400"
+                    onChange={(e) => setQuantity(Math.min(100, Math.max(1, parseInt(e.target.value) || 1)))}
+                    className="w-20 text-center"
                   />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    onClick={() => setQuantity(Math.min(100, quantity + 1))}
+                    disabled={quantity >= 100}
+                  >
+                    +
+                  </Button>
                 </div>
+
+                {/* Guest Names Form */}
+                <GuestNamesForm
+                  quantity={quantity}
+                  guestNames={guestNames}
+                  onGuestNamesChange={setGuestNames}
+                />
 
                 <Separator />
 

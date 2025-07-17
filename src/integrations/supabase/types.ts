@@ -24,6 +24,7 @@ export type Database = {
           payment_method: string | null
           payment_status: string | null
           purchase_date: string
+          qr_code: string | null
           quantity: number
           status: string
           ticket_id: string
@@ -39,6 +40,7 @@ export type Database = {
           payment_method?: string | null
           payment_status?: string | null
           purchase_date?: string
+          qr_code?: string | null
           quantity?: number
           status?: string
           ticket_id: string
@@ -54,6 +56,7 @@ export type Database = {
           payment_method?: string | null
           payment_status?: string | null
           purchase_date?: string
+          qr_code?: string | null
           quantity?: number
           status?: string
           ticket_id?: string
@@ -61,6 +64,44 @@ export type Database = {
           transaction_reference?: string | null
         }
         Relationships: []
+      }
+      ticket_guests: {
+        Row: {
+          checked_in: boolean
+          checkin_time: string | null
+          created_at: string
+          guest_name: string
+          guest_order: number
+          id: string
+          purchase_id: string
+        }
+        Insert: {
+          checked_in?: boolean
+          checkin_time?: string | null
+          created_at?: string
+          guest_name: string
+          guest_order: number
+          id?: string
+          purchase_id: string
+        }
+        Update: {
+          checked_in?: boolean
+          checkin_time?: string | null
+          created_at?: string
+          guest_name?: string
+          guest_order?: number
+          id?: string
+          purchase_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ticket_guests_purchase_id_fkey"
+            columns: ["purchase_id"]
+            isOneToOne: false
+            referencedRelation: "purchases"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       tickets: {
         Row: {
