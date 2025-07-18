@@ -15,14 +15,21 @@ import {
   Download, 
   Calendar,
   MapPin,
-  Clock
+  Clock,
+  Eye,
+  QrCode
 } from "lucide-react";
 import { useTicketData } from "@/hooks/useTicketData";
 import TicketDesign from "./TicketDesign";
+import PurchaseDetailsModal from "./PurchaseDetailsModal";
+import { useNavigate } from "react-router-dom";
 
 const AdminDashboard = () => {
   const { tickets, purchases, loading, updateTicket } = useTicketData();
   const [editingTicket, setEditingTicket] = useState<any>(null);
+  const [selectedPurchase, setSelectedPurchase] = useState<any>(null);
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const navigate = useNavigate();
 
   const currentTicket = tickets[0];
 
@@ -58,6 +65,15 @@ const AdminDashboard = () => {
       title: "Ticket Downloaded",
       description: `Downloading ticket ${ticketId} for ${customerName}`,
     });
+  };
+
+  const viewPurchaseDetails = (purchase: any) => {
+    setSelectedPurchase(purchase);
+    setShowDetailsModal(true);
+  };
+
+  const openCheckInSystem = () => {
+    navigate('/check-in');
   };
 
   if (loading) {
@@ -202,6 +218,25 @@ const AdminDashboard = () => {
       </TabsContent>
 
       <TabsContent value="tickets" className="space-y-6">
+        {/* Check-In System Button */}
+        <Card className="border-orange-200 bg-gradient-to-r from-orange-50 to-red-50">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-lg font-semibold text-orange-800">Check-In System</h3>
+                <p className="text-orange-600">Access the gate check-in system for event day</p>
+              </div>
+              <Button 
+                onClick={openCheckInSystem}
+                className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600"
+              >
+                <QrCode className="w-4 h-4 mr-2" />
+                Open Check-In
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
         <Card>
           <CardHeader>
             <CardTitle>All Purchased Tickets</CardTitle>
@@ -244,15 +279,25 @@ const AdminDashboard = () => {
                           {purchase.payment_status || 'completed'}
                         </Badge>
                       </div>
-                      <Button 
-                        size="sm" 
-                        onClick={() => downloadTicket(purchase.ticket_id, purchase.customer_name)}
-                        disabled={purchase.payment_status !== 'completed'}
-                        className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 disabled:opacity-50"
-                      >
-                        <Download className="w-4 h-4 mr-2" />
-                        Download
-                      </Button>
+                      <div className="flex gap-2">
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          onClick={() => viewPurchaseDetails(purchase)}
+                        >
+                          <Eye className="w-4 h-4 mr-2" />
+                          View
+                        </Button>
+                        <Button 
+                          size="sm" 
+                          onClick={() => downloadTicket(purchase.ticket_id, purchase.customer_name)}
+                          disabled={purchase.payment_status !== 'completed'}
+                          className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 disabled:opacity-50"
+                        >
+                          <Download className="w-4 h-4 mr-2" />
+                          Download
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 ))
@@ -367,6 +412,14 @@ const AdminDashboard = () => {
             </CardContent>
           </Card>
         )}
+
+        {/* Purchase Details Modal */}
+        <PurchaseDetailsModal
+          purchase={selectedPurchase}
+          eventData={currentTicket}
+          isOpen={showDetailsModal}
+          onClose={() => setShowDetailsModal(false)}
+        />
       </TabsContent>
     </Tabs>
   );

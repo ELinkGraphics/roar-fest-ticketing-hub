@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { CheckCircle, XCircle, Loader } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import TicketPurchaseSuccess from "@/components/TicketPurchaseSuccess";
 
 const PaymentSuccess = () => {
   const [searchParams] = useSearchParams();
@@ -12,6 +13,8 @@ const PaymentSuccess = () => {
   const { toast } = useToast();
   const [verificationStatus, setVerificationStatus] = useState<"loading" | "success" | "failed">("loading");
   const [purchaseData, setPurchaseData] = useState<any>(null);
+  const [eventData, setEventData] = useState<any>(null);
+  const [guests, setGuests] = useState<any[]>([]);
 
   useEffect(() => {
     const verifyPayment = async () => {
@@ -41,6 +44,10 @@ const PaymentSuccess = () => {
         if (data.success && data.payment_status === "completed") {
           setVerificationStatus("success");
           setPurchaseData(data.purchase);
+          
+          // Load event data and guests
+          await loadEventAndGuests(data.purchase);
+          
           toast({
             title: "Payment Successful!",
             description: "Your ticket purchase has been confirmed.",
@@ -62,6 +69,32 @@ const PaymentSuccess = () => {
     verifyPayment();
   }, [searchParams, toast]);
 
+  const loadEventAndGuests = async (purchase: any) => {
+    try {
+      // Load event data
+      const { data: ticketData, error: ticketError } = await supabase
+        .from('tickets')
+        .select('*')
+        .eq('id', purchase.ticket_id)
+        .single();
+
+      if (ticketError) throw ticketError;
+      setEventData(ticketData);
+
+      // Load guests
+      const { data: guestData, error: guestError } = await supabase
+        .from('ticket_guests')
+        .select('*')
+        .eq('purchase_id', purchase.id)
+        .order('guest_order');
+
+      if (guestError) throw guestError;
+      setGuests(guestData || []);
+    } catch (error) {
+      console.error("Error loading additional data:", error);
+    }
+  };
+
   if (verificationStatus === "loading") {
     return (
       <div className="min-h-screen bg-gradient-to-br from-orange-50 via-yellow-50 to-red-50 flex items-center justify-center">
@@ -72,6 +105,18 @@ const PaymentSuccess = () => {
             <p className="text-gray-600">Please wait while we confirm your payment...</p>
           </CardContent>
         </Card>
+      </div>
+    );
+  }
+
+  if (verificationStatus === "success" && purchaseData && eventData) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-orange-50 via-yellow-50 to-red-50">
+        <TicketPurchaseSuccess
+          purchase={purchaseData}
+          eventData={eventData}
+          guests={guests}
+        />
       </div>
     );
   }
@@ -90,22 +135,7 @@ const PaymentSuccess = () => {
           </CardTitle>
         </CardHeader>
         <CardContent className="text-center space-y-4">
-          {verificationStatus === "success" ? (
-            <>
-              <p className="text-gray-600">
-                Thank you for your purchase! Your ticket has been confirmed.
-              </p>
-              {purchaseData && (
-                <div className="bg-gray-50 p-4 rounded-lg text-left">
-                  <p><strong>Ticket ID:</strong> {purchaseData.ticket_id}</p>
-                  <p><strong>Customer:</strong> {purchaseData.customer_name}</p>
-                  <p><strong>Quantity:</strong> {purchaseData.quantity}</p>
-                  <p><strong>Amount:</strong> {purchaseData.total_amount} ETB</p>
-                  <p><strong>Status:</strong> {purchaseData.payment_status}</p>
-                </div>
-              )}
-            </>
-          ) : (
+          {verificationStatus === "failed" && (
             <p className="text-gray-600">
               Your payment could not be processed. Please try again or contact support.
             </p>

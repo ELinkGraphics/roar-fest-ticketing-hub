@@ -126,9 +126,14 @@ const TicketPurchase = ({ onBackToAdmin }: TicketPurchaseProps) => {
     return (
       <TicketPurchaseSuccess
         purchase={purchaseData}
-        ticket={currentTicket}
-        onBackToAdmin={onBackToAdmin}
-        onDownloadTicket={downloadTicket}
+        eventData={{
+          event_name: currentTicket.event_name,
+          date: currentTicket.date,
+          time: currentTicket.time,
+          venue: currentTicket.venue,
+          price: currentTicket.price
+        }}
+        guests={[]}
       />
     );
   }

@@ -100,8 +100,14 @@ const TicketPurchaseStandalonePage = () => {
     return (
       <TicketPurchaseSuccess
         purchase={purchaseData}
-        ticket={currentTicket}
-        onDownloadTicket={downloadTicket}
+        eventData={{
+          event_name: currentTicket.event_name,
+          date: currentTicket.date,
+          time: currentTicket.time,
+          venue: currentTicket.venue,
+          price: currentTicket.price
+        }}
+        guests={guestNames.map((name, index) => ({ guest_name: name, guest_order: index + 1 }))}
       />
     );
   }

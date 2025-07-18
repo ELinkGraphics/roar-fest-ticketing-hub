@@ -12,9 +12,10 @@ interface TicketDesignProps {
     venue: string;
     price: number;
   };
+  qrCode?: string | null;
 }
 
-const TicketDesign = ({ ticketId, customerName, eventData }: TicketDesignProps) => {
+const TicketDesign = ({ ticketId, customerName, eventData, qrCode }: TicketDesignProps) => {
   return (
     <div className="max-w-md mx-auto">
       <Card className="overflow-hidden relative">

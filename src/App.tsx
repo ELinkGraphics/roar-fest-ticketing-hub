@@ -7,6 +7,7 @@ import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import TicketPurchaseStandalone from "./pages/TicketPurchaseStandalone";
 import PaymentSuccess from "./pages/PaymentSuccess";
+import CheckIn from "./pages/CheckIn";
 
 const queryClient = new QueryClient();
 
@@ -20,6 +21,7 @@ const App = () => (
           <Route path="/" element={<Index />} />
           <Route path="/tickets" element={<TicketPurchaseStandalone />} />
           <Route path="/payment-success" element={<PaymentSuccess />} />
+          <Route path="/check-in" element={<CheckIn />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
