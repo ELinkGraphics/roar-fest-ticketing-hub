@@ -248,7 +248,7 @@ const AdminDashboard = () => {
                 <p className="text-center text-gray-500 py-8">No tickets purchased yet</p>
               ) : (
                 purchases.map((purchase) => (
-                  <div key={purchase.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 transition-colors">
+                  <div key={purchase.id} className="flex items-center justify-between p-4 border rounded-lg transition-colors">
                     <div className="flex items-center gap-4">
                       <Badge className="bg-orange-600">{purchase.ticket_id}</Badge>
                       <div>
@@ -279,18 +279,26 @@ const AdminDashboard = () => {
                           {purchase.payment_status || 'completed'}
                         </Badge>
                       </div>
-                      <div className="flex gap-2">
+                      <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
                         <Button 
                           size="sm" 
                           variant="outline"
-                          onClick={() => viewPurchaseDetails(purchase)}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            viewPurchaseDetails(purchase);
+                          }}
                         >
                           <Eye className="w-4 h-4 mr-2" />
                           View
                         </Button>
                         <Button 
                           size="sm" 
-                          onClick={() => downloadTicket(purchase.ticket_id, purchase.customer_name)}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            downloadTicket(purchase.ticket_id, purchase.customer_name);
+                          }}
                           disabled={purchase.payment_status !== 'completed'}
                           className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 disabled:opacity-50"
                         >
