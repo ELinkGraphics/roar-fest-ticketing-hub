@@ -68,8 +68,10 @@ const AdminDashboard = () => {
   };
 
   const viewPurchaseDetails = (purchase: any) => {
+    console.log('View button clicked for purchase:', purchase.id);
     setSelectedPurchase(purchase);
     setShowDetailsModal(true);
+    console.log('Modal state set to true');
   };
 
   const openCheckInSystem = () => {
@@ -420,15 +422,15 @@ const AdminDashboard = () => {
             </CardContent>
           </Card>
         )}
-
-        {/* Purchase Details Modal */}
-        <PurchaseDetailsModal
-          purchase={selectedPurchase}
-          eventData={currentTicket}
-          isOpen={showDetailsModal}
-          onClose={() => setShowDetailsModal(false)}
-        />
       </TabsContent>
+
+      {/* Purchase Details Modal - moved outside TabsContent so it's always available */}
+      <PurchaseDetailsModal
+        purchase={selectedPurchase}
+        eventData={currentTicket}
+        isOpen={showDetailsModal}
+        onClose={() => setShowDetailsModal(false)}
+      />
     </Tabs>
   );
 };
